@@ -1,18 +1,17 @@
 import folium
 import pandas
 
-data = pandas.read_csv("volcanoes.txt")
-lat = list(data["LAT"])
-lon = list(data["LON"])
-elev = list(data["ELEV"])
-name = list(data["NAME"])
+# load volcanoes data
+DATA = pandas.read_csv("volcanoes.txt")
+LAT = list(DATA["LAT"])
+LON = list(DATA["LON"])
+ELEV = list(DATA["ELEV"])
+NAME = list(DATA["NAME"])
 
-html = """
-Volcano name:<br>
-<a href="https://www.google.com/search?q=%%22%s%%22" target="_blank">%s</a><br>
-Height: %s m
-"""
+# create map
+MAP = folium.Map(location=[38.58, -99.09], zoom_start=5, tiles="Stamen Terrain")
 
+# produce colour based on elevation
 def color_producer(elevation):
   if elevation < 1000:
     return 'green'
@@ -21,25 +20,40 @@ def color_producer(elevation):
   else:
     return 'red'
 
-map = folium.Map(location=[38.58, -99.09], zoom_start=5, tiles="Stamen Terrain")
-
 # add a feature group of volcanoes
-fgv = folium.FeatureGroup(name="Volcanoes")
+def map_volcanoes():
+  html = """
+  Volcano name:<br>
+  <a href="https://www.google.com/search?q=%%22%s%%22" target="_blank">%s</a><br>
+  Height: %s m
+  """
+  fgv = folium.FeatureGroup(name="Volcanoes")
 
-for lt, ln, el, nm in zip(lat, lon, elev, name):
-  iframe = folium.IFrame(html=html % (nm, nm, str(el)), width=200, height=100)
-  fgv.add_child(folium.CircleMarker(location=[lt, ln], popup=folium.Popup(iframe, parse_html=True), radius=6, fill_color=color_producer(el), color="grey", fill_opacity=0.7))
+  for lt, ln, el, nm in zip(LAT, LON, ELEV, NAME):
+    iframe = folium.IFrame(html=html % (nm, nm, str(el)), width=200, height=100)
+    fgv.add_child(folium.CircleMarker(location=[lt, ln], popup=folium.Popup(iframe, parse_html=True), radius=6, fill_color=color_producer(el), color="grey", fill_opacity=0.7))
+  return fgv
 
 # add a feature group of population
-fgp = folium.FeatureGroup(name="Population")
+def map_population():
+  fgp = folium.FeatureGroup(name="Population")
 
-fgp.add_child(folium.GeoJson(data=open('world.json', 'r', encoding='utf-8-sig').read(),
-style_function=lambda x: {'fillColor':'green' if x['properties']['POP2005'] < 10000000
-else 'orange' if 10000000 <= x['properties']['POP2005'] < 20000000 else 'red'}))
+  fgp.add_child(folium.GeoJson(data=open('world.json', 'r', encoding='utf-8-sig').read(),
+  style_function=lambda x: {'fillColor':'green' if x['properties']['POP2005'] < 10000000
+  else 'orange' if 10000000 <= x['properties']['POP2005'] < 20000000 else 'red'}))
+  return fgp
 
 # add layer control
-map.add_child(fgv)
-map.add_child(fgp)
-map.add_child(folium.LayerControl())
+def layer_control(*args):
+  for fg in args:
+    MAP.add_child(fg)
+  MAP.add_child(folium.LayerControl())
 
-map.save("map_html_advanced.html")
+def main():
+  fg_volcanoes = map_volcanoes()
+  fg_population = map_population()
+  layer_control(fg_volcanoes, fg_population)
+  MAP.save("map_html_advanced.html")  # save the html page
+
+if __name__ == '__main__':
+  main()
