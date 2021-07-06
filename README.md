@@ -7,6 +7,7 @@ In the terminal, run the following command:
 ```bash
 python3 mappee-web-map.py
 ```
+Open the *map_html_advanced.html* file generated in the same directory to use the map.
 ### Packages
 In the terminal, run the following command to install folium and pandas:
 ```bash
